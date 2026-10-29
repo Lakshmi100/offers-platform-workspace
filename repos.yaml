@@ -1,0 +1,9 @@
+# Repos that make up the Offers Platform project.
+# scripts/bootstrap.sh clones each into ./repos/<name>.
+repos:
+  - name: abc-bank
+    url: https://github.com/Lakshmi100/abc-bank.git
+    purpose: ABC Bank side - core banking Postgres, data generator, CDC, file exchange
+  - name: customer-spend-analytics
+    url: https://github.com/Lakshmi100/customer-spend-analytics.git
+    purpose: Offers Platform - intake, lakehouse, transform, offers, attribution

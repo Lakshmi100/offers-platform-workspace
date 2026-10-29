@@ -1,0 +1,55 @@
+# One label set for every repo in the project. Apply with scripts/sync-labels.sh.
+# Keep the fixed shape (name, color, description) - the script reads it line by line.
+
+# Story workflow
+- name: story
+  color: "1d76db"
+  description: A user story with acceptance criteria
+- name: needs-approval
+  color: "fbca04"
+  description: Draft story waiting for the approver's sign-off
+- name: approved
+  color: "0e8a16"
+  description: Approver has signed off; ready to start
+
+# Work types
+- name: design
+  color: "c5def5"
+  description: Design docs and ADRs
+- name: spike
+  color: "d4c5f9"
+  description: Time-boxed experiment, torn down the same day
+- name: infra
+  color: "5319e7"
+  description: Terraform and AWS resources
+- name: pipeline
+  color: "006b75"
+  description: Data pipelines, schemas, generators
+- name: finops
+  color: "b60205"
+  description: Cost, tagging, budgets, teardown
+- name: docs
+  color: "0075ca"
+  description: Documentation
+
+# Repo area
+- name: abc-bank
+  color: "e99695"
+  description: Bank-side work (abc-bank repo)
+- name: platform
+  color: "bfdadc"
+  description: Offers Platform work (customer-spend-analytics repo)
+
+# DEA-C01 exam domains
+- name: dea-domain-1
+  color: "ededed"
+  description: "Exam domain 1: ingestion and transformation"
+- name: dea-domain-2
+  color: "ededed"
+  description: "Exam domain 2: data store management"
+- name: dea-domain-3
+  color: "ededed"
+  description: "Exam domain 3: data operations and support"
+- name: dea-domain-4
+  color: "ededed"
+  description: "Exam domain 4: security and governance"

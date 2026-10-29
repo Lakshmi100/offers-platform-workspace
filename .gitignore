@@ -1,0 +1,9 @@
+# Child repos are cloned here by scripts/bootstrap.sh
+repos/
+
+.DS_Store
+# Office lock files
+~$*
+
+# Personal working notes - kept local, not published
+docs/reference/*.docx
