@@ -39,6 +39,9 @@
 - name: platform
   color: "bfdadc"
   description: Offers Platform work (customer-spend-analytics repo)
+- name: foundations
+  color: "c2e0c6"
+  description: Organization-wide AWS setup (aws-foundations repo)
 
 # DEA-C01 exam domains
 - name: dea-domain-1

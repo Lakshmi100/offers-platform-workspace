@@ -1,6 +1,9 @@
 # Repos that make up the Offers Platform project.
 # scripts/bootstrap.sh clones each into ./repos/<name>.
 repos:
+  - name: aws-foundations
+    url: https://github.com/Lakshmi100/aws-foundations.git
+    purpose: Organization-wide AWS - organization, accounts, Identity Center, budgets, CloudTrail
   - name: abc-bank
     url: https://github.com/Lakshmi100/abc-bank.git
     purpose: ABC Bank side - core banking Postgres, data generator, CDC, file exchange

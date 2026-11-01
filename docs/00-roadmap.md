@@ -28,7 +28,7 @@
 | Orchestration | Step Functions for event-driven, per-batch AWS workflows; MWAA for the nightly business-calendar workflow, backfills, and cross-product dependencies. Airflow triggers Step Functions where they meet |
 | Legacy | Snowflake kept as the legacy platform; current Phase 2 stack stays until retired |
 | AWS accounts | Three accounts (small-organization compromise): **Management + Shared Services** (new), **ABC Bank** (new), **Offers Platform** (existing account) |
-| Repos | `offers-platform-workspace` for project-wide docs and tracking setup; `customer-spend-analytics` evolves into v3 (the Offers Platform); `abc-bank` for the bank's side and future bank-internal projects |
+| Repos | `offers-platform-workspace` for project-wide docs and tracking setup; `aws-foundations` for organization-wide AWS (management account, Identity Center, guardrails; decided Nov 1, 2026); `customer-spend-analytics` evolves into v3 (the Offers Platform); `abc-bank` for the bank's side and future bank-internal projects |
 | FinOps posture | Lean by default (~$50–100/month); Working (~$150–300/month) during heavy build weeks |
 | Docs and tracking | Project-wide docs (roadmap, business problem, architecture, ADRs, spikes) in `offers-platform-workspace`; repo-specific docs in each repo's `docs/`; work tracked as GitHub Issues, with every story approved before work starts |
 
@@ -207,7 +207,6 @@ repos.yaml                  # repo manifest
 ```
 infra/
   platform/                 # Terraform for the Offers Platform account
-  management/               # Terraform for the management + shared services account
 platform/
   intake/                   # intake modes, quarantine, tokenization
   lakehouse/                # Iceberg table definitions and merges
@@ -215,6 +214,13 @@ platform/
   offers/                   # ranking, holdout assignment, offer file
   attribution/              # redemption matching, reports, settlement
   orchestration/            # MWAA DAGs, Step Functions definitions
+```
+
+**`aws-foundations`** (new, Nov 1, 2026): organization-wide AWS setup shared by every project, kept apart from any one product.
+```
+README.md                   # one-time manual steps (management account sign-up), state bootstrap
+organization/               # organization, accounts, Identity Center, permission sets
+guardrails/                 # budgets, cost anomaly detection, cost-allocation tags, CloudTrail organization trail
 ```
 
 **`abc-bank`** (new): the bank's systems and future bank-internal projects.
@@ -240,5 +246,5 @@ exchange/                   # outbound feeds, inbound offer and settlement drop
   - Story workflow: `story`, `needs-approval`, `approved`
   - Exam domains: `dea-domain-1` to `dea-domain-4`
   - Work types: `design`, `spike`, `infra`, `pipeline`, `finops`, `docs`
-  - Repo area: `abc-bank` and `platform`
+  - Repo area: `abc-bank`, `platform` and `foundations`
 - Every issue lists its acceptance criteria, and any issue that creates hourly-billed resources includes a teardown check.

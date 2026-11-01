@@ -9,6 +9,7 @@ Home base for **Customer Spend Analytics v3**: a card-linked offers platform bet
 | Repo | What it holds |
 |---|---|
 | [`offers-platform-workspace`](https://github.com/Lakshmi100/offers-platform-workspace) (this one) | Roadmap, business problem, architecture, ADRs, spike write-ups, story drafts, issue templates, shared labels |
+| [`aws-foundations`](https://github.com/Lakshmi100/aws-foundations) | Organization-wide AWS setup shared by every project: the organization and its accounts, Identity Center, budgets and anomaly alerts, the organization CloudTrail trail |
 | [`abc-bank`](https://github.com/Lakshmi100/abc-bank) | The bank's side: Terraform for the ABC Bank account, core-banking Postgres schema, synthetic data generator, DMS CDC, file exchange |
 | [`customer-spend-analytics`](https://github.com/Lakshmi100/customer-spend-analytics) | The Offers Platform (v1/v2 code, evolving into v3): intake, lakehouse, dbt, offers, attribution, orchestration |
 
