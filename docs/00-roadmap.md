@@ -35,7 +35,7 @@
 ### Default engineering standards (apply unless an ADR says otherwise)
 - Single region, us-east-1. Multi-region disaster recovery is described in the architecture doc but not built.
 - Human access through IAM Identity Center only; no IAM users.
-- Terraform for all infrastructure, with remote state in S3 and locking; one state per account.
+- Terraform for all infrastructure, with remote state in S3 and locking; one state bucket per account, with separate Terraform roots for long-lived foundations and per-session resources (Nov 1, 2026).
 - GitHub Actions deploys through OIDC; no long-lived access keys.
 - Customer-managed KMS keys per account and per sensitive zone, with cross-account key policies.
 - Lake Formation tag-based access control.
@@ -108,7 +108,7 @@ Exam only: a final mock, a review of flagged questions, and the exam on **Oct 28
 - Terraform remote state in each account; GitHub Actions OIDC roles
 - Networking for the ABC Bank account (RDS and DMS) using S3 gateway endpoints instead of a NAT gateway
 - KMS keys; lake buckets for quarantine, raw, curated, and outbound, with lifecycle rules: 4 weeks then cold storage; curated history to Glacier Instant Retrieval; no archive rule on quarantine (deleted by the pipeline)
-- **Exit:** `terraform apply` builds everything and `terraform destroy` removes it cleanly; a test budget alert fires
+- **Exit:** `terraform apply` builds everything; long-lived foundations (organization, state, keys, network, guardrails) stay at near-zero monthly cost, and every session root's `terraform destroy` removes it cleanly; a test budget alert fires
 
 ### Phase 2: ABC Bank source (`abc-bank` repo)
 - Core-banking schema on RDS Postgres: customers, accounts, cards, merchants, transactions

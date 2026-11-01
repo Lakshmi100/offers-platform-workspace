@@ -1,8 +1,8 @@
 # FND-5: Cost and audit guardrails for the organization
 
-**Repo:** `aws-foundations` (new) · **Milestone:** Phase 1: Foundations · **Estimate:** 3 pts
+**Repo:** `aws-foundations` · **Milestone:** Phase 1: Foundations · **Estimate:** 5 pts
 **Labels:** `story`, `needs-approval`, `infra`, `finops`, `foundations`, `dea-domain-3`
-**Approver:** Lakshmi100 · **Status:** draft, not yet an issue (draft ID; the real key comes from the issue number)
+**Approver:** Lakshmi100 · **Status:** draft round 2, not yet an issue (draft ID; the real key comes from the issue number)
 
 ## User story
 
@@ -12,50 +12,64 @@
 
 ## Context
 
-Roadmap FinOps guardrails: "AWS Budgets alerts at 50%, 80%, and 100% of the monthly posture limit, plus Cost Anomaly Detection", posture "Lean by default (~$50–100/month); Working (~$150–300/month)", mandatory cost-allocation tags, and a CloudTrail organization trail (`docs/00-roadmap.md` §1, §4 Phase 1, §6). Phase 1 exit criterion: "a test budget alert fires". ABC-1's cost criterion (AC9) needs the cost-allocation tags activated.
+Roadmap FinOps guardrails: "AWS Budgets alerts at 50%, 80%, and 100% of the monthly posture limit, plus Cost Anomaly Detection", posture "Lean by default (~$50–100/month); Working (~$150–300/month)", mandatory cost-allocation tags, and a CloudTrail organization trail (`docs/00-roadmap.md` §1, §4 Phase 1, §6). Phase 1 exit criterion: "a test budget alert fires". ABC-1's cost criterion (AC9) needs the cost-allocation tags active. FND-3's "show an auditor who used the key" comes from this trail.
 
 ## Requirements
 
-1. A monthly cost budget covers the whole organization, with email alerts at 50%, 80% and 100% of the limit, sent to the engineer's email address.
-2. The limit can be switched between the Lean posture ($100) and the Working posture ($300) by changing one Terraform variable.
-3. Cost Anomaly Detection watches the organization's spend by service and sends an email alert.
-4. `data-product`, `environment`, `owner` and `cost-center` are activated as cost-allocation tags, so Cost Explorer can show cost by tag.
-5. An organization CloudTrail trail records management events in all three accounts and stores them in S3 in the management account.
-6. Everything is defined in Terraform in the `aws-foundations` repo.
+1. **Budget:** one monthly cost budget for the whole organization (unblended cost), with email alerts when *actual* spend reaches 50%, 80% and 100% of the limit.
+2. **Posture:** the limit is $100 (Lean) by default and $300 (Working) when one Terraform variable is switched. Switching back returns it to $100.
+3. **Anomaly detection:** Cost Anomaly Detection watches spend by AWS service across the organization and sends a daily email summary when an anomaly's cost impact is $10 or more.
+4. **Cost-allocation tags:** Cost Explorer is enabled in the management account, and `data-product`, `environment`, `owner` and `cost-center` are active cost-allocation tags. AWS can activate a tag only after it has seen it on a billed resource; FND-1's state bucket is the first one.
+5. **Audit trail:** an organization CloudTrail trail records management events in all three accounts, **in all regions**, with log file validation on. Logs are stored in an S3 bucket in the management account, kept for **90 days**, then deleted.
+6. **Log protection:** the trail and its bucket can be changed only by the management account's administrator role. The bucket is never public. Earlier versions of log objects are kept, so overwriting or deleting a log leaves the original recoverable.
+7. **Existing setup in the Offers Platform account:** before the organization trail is created, list any trails, budgets and anomaly monitors already in that account. Remove an existing trail that only duplicates management events (a second copy is billed). Keep anything else and list it in `README.md`.
+8. Everything is defined in Terraform in the `aws-foundations` `guardrails/` root, except enabling Cost Explorer for the first time, which `README.md` lists as a manual step.
 
 ## Constraints
 
 | Area | Constraint |
 |---|---|
-| Personal data | The alert email address is stored in Terraform variables, not committed in code. |
-| Card data (PCI) | Not applicable. |
-| Network and access | The CloudTrail bucket is not public, and member accounts cannot delete or change its logs. |
-| Encryption | Trail logs are encrypted at rest. |
-| Cost | Persistent. Stays within free tiers where possible (one trail's management events are free); total under $2 per month. |
-| Tagging | Every taggable resource carries the four cost tags. |
-| Downstream compatibility | Not applicable. |
+| Access and lock-out | Not applicable: no Identity Center, permission-set or organization-policy changes. CloudTrail trusted access is enabled by FND-1. |
+| Least privilege | Only the management account's administrator role can change the budget, the anomaly monitor, the trail or its bucket. Member-account roles cannot reach them. |
+| No IAM users or long-lived keys | None created. |
+| Cost | Persistent. One trail's management events are free; S3 storage for 90 days of logs and the budget stay **under $2 per month** in total. Logs are encrypted with S3-managed keys (no KMS key cost). |
+| Tagging | The trail, its bucket, the budget and the anomaly monitor carry the four cost tags with the values in `AGENTS.md`. |
+| Audit | This story creates the audit trail. |
+| Effect on member accounts | Their management events are recorded in the management account. Duplicate trails in the Offers Platform account are removed (requirement 7). Member accounts can see their own costs in Cost Explorer. |
+| Personal data | The alert email address goes in the untracked `.tfvars` file. |
 
 ## Acceptance criteria
 
-- [ ] **AC1** `aws budgets describe-budgets` in the management account shows one monthly cost budget with notifications at 50, 80 and 100 percent of actual spend.
-- [ ] **AC2** Changing the posture variable from Lean to Working and applying changes the budget limit from $100 to $300, with no other changes in the plan.
-- [ ] **AC3** A test alert reaches the engineer's inbox: temporarily setting the limit below current month-to-date spend triggers the 50% notification email within 24 hours. The limit is then reset.
-- [ ] **AC4** `aws ce get-anomaly-monitors` and `aws ce get-anomaly-subscriptions` show a service-level monitor with an email subscription.
-- [ ] **AC5** `aws ce list-cost-allocation-tags` shows the four tags with status `Active`.
-- [ ] **AC6** `aws cloudtrail describe-trails` shows an organization trail that is logging, and a management event done in the ABC Bank account (for example, creating and deleting a test S3 bucket) appears in the trail's S3 bucket within 30 minutes.
-- [ ] **AC7** With the ABC Bank administrator role, deleting an object in the trail bucket is denied.
-- [ ] **AC8** The PR records the expected monthly cost of this story's resources, under $2.
-- [ ] **AC9** `terraform fmt -check` and `terraform validate` pass.
+- [ ] **AC1** `aws budgets describe-budgets` shows one monthly cost budget with a $100 limit and notifications at 50, 80 and 100 percent of actual spend, each with the engineer's email as subscriber.
+- [ ] **AC2** Switching the posture variable to Working and running `terraform plan` shows only the limit changing to $300. Switching back and applying returns it to $100.
+- [ ] **AC3** A test alert reaches the inbox: with the limit temporarily set (through Terraform) to $0.01 and month-to-date spend above $0.00, a budget alert email arrives within 24 hours. The limit is then set back through Terraform, and `terraform plan` shows no changes. (MANUAL: check the inbox. If month-to-date spend is $0.00, wait until it isn't.)
+- [ ] **AC4** `aws ce get-anomaly-monitors` shows a service-level monitor, and `aws ce get-anomaly-subscriptions` shows a daily email subscription with a $10 threshold.
+- [ ] **AC5** `aws ce list-cost-allocation-tags` shows all four tags as `Active`.
+- [ ] **AC6** `aws cloudtrail describe-trails` shows an organization trail that is multi-region with log file validation on, and `get-trail-status` shows it logging.
+- [ ] **AC7** Creating and deleting a test S3 bucket in the ABC Bank account produces events in the trail's bucket within 30 minutes. The test bucket is deleted.
+- [ ] **AC8** `aws cloudtrail validate-logs` for the last hour reports the log files as valid.
+- [ ] **AC9** The trail bucket has versioning on, all public access blocked, encryption at rest, and a lifecycle rule that deletes objects after 90 days.
+- [ ] **AC10** For the ABC Bank administrator role, `aws iam simulate-principal-policy` shows `cloudtrail:StopLogging`, `cloudtrail:DeleteTrail` and `budgets:ModifyBudget` denied on the organization trail and budget, and `aws cloudtrail describe-trails` from the ABC Bank account shows the organization trail as read-only there. Destructive actions are never tested by calling them for real.
+- [ ] **AC11** `README.md` lists what was found in the Offers Platform account (requirement 7), and `aws cloudtrail describe-trails` in that account shows no trail of its own that duplicates management events.
+- [ ] **AC12** The trail, trail bucket, budget and anomaly monitor have the four cost tags with the values in `AGENTS.md`.
+- [ ] **AC13** The PR records the expected monthly cost, under $2.
+- [ ] **AC14** `terraform plan` in `guardrails/` shows no changes after apply; `terraform fmt -check` and `terraform validate` pass.
 
 ## Out of scope
 
-- A tag policy that blocks untagged resources (tags are checked by each story's acceptance criteria for now)
-- Budget actions that stop resources automatically
-- Data events in CloudTrail; AWS Config; Security Hub
+- A tag policy that blocks untagged resources (a later `aws-foundations` story)
+- Budgets per account; budget actions that stop resources automatically
+- Data events in CloudTrail; delivery to CloudWatch Logs or CloudTrail Lake; AWS Config; Security Hub
+- Encrypting trail logs with a customer-managed KMS key
 
 ## Depends on
 
-- FND-1: the organization, the management account, and `aws-foundations` Terraform state.
+- FND-1: the organization (all features), the management account, CloudTrail trusted access, and `aws-foundations` Terraform state.
+
+## Decisions
+
+- Nov 1, 2026: management-account Terraform lives in `aws-foundations`.
+- **Proposed defaults, for the approver to confirm:** trail in all regions; logs kept 90 days, then deleted; S3-managed encryption for logs; anomaly alerts daily at $10 impact; unblended cost for the budget.
 
 ## Open questions
 
