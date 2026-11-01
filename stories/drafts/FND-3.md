@@ -2,7 +2,7 @@
 
 **Repo:** `abc-bank` (`infra/`) · **Milestone:** Phase 1: Foundations · **Estimate:** 2 pts
 **Labels:** `story`, `needs-approval`, `infra`, `abc-bank`, `dea-domain-4`
-**Approver:** Lakshmi100 · **Status:** draft round 2, not yet an issue (draft ID; the real key comes from the issue number)
+**Approver:** Lakshmi100 · **Status:** draft round 3, not yet an issue (draft ID; the real key comes from the issue number)
 
 ## User story
 
@@ -21,8 +21,10 @@ Roadmap standard: "Customer-managed KMS keys per account and per sensitive zone,
 3. Who can do what with the key:
    - **Administrator role:** everything, including changing the key policy, disabling the key and scheduling its deletion.
    - **Engineering role:** use the key for encryption (encrypt, decrypt, re-encrypt, generate data keys, describe), and let RDS, Secrets Manager and DMS use it on its behalf (create grants only for AWS resources). It cannot change the policy, disable the key or schedule deletion.
-   - **RDS, Secrets Manager and DMS:** use the key only when acting for a principal in the ABC Bank account.
-   - **Anyone else:** no access. The key policy keeps AWS's standard statement that lets the ABC Bank account's IAM policies grant access, so the key can't become unmanageable; no IAM policy other than the two roles' grants access to it.
+   - **RDS, Secrets Manager and DMS:** use the key only when acting for a principal in the ABC Bank account (through grants).
+   - **CloudWatch Logs:** use the key to encrypt log groups in the ABC Bank account in `us-east-1` whose names start with `/aws/rds/` (the logs RDS exports) or `/abc-bank/core-banking/`, and no others.
+   - **Break-glass:** `OrganizationAccountAccessRole` (FND-1's recovery path) has full administrator rights by design and so can use the key. AWS service-linked roles act only for their service.
+   - **Anyone else:** no access. The key policy keeps AWS's standard statement that lets the ABC Bank account's IAM policies grant access, so the key can't become unmanageable. This stays true over time because FND-1's permissions boundary stops roles created by the engineering role from using the key directly.
    - A deliberate deletion waits **30 days**, the longest AWS allows.
 4. The key persists. Destroying any other `abc-bank` Terraform root never schedules it for deletion.
 5. Other Terraform roots in `abc-bank` can find the key by its alias, without hard-coding its ID or ARN.
@@ -45,11 +47,14 @@ Roadmap standard: "Customer-managed KMS keys per account and per sensitive zone,
 - [ ] **AC2** `aws kms get-key-rotation-status` returns `KeyRotationEnabled: true`.
 - [ ] **AC3** With the ABC Bank engineering role, `aws kms encrypt` and `aws kms decrypt` of a test string with the key succeed.
 - [ ] **AC4** For the ABC Bank engineering role, `aws iam simulate-principal-policy` (with the key policy as resource policy) shows `kms:ScheduleKeyDeletion`, `kms:DisableKey` and `kms:PutKeyPolicy` on the key as denied. These are never tested by calling them for real.
-- [ ] **AC4a** With the ABC Bank engineering role, creating and deleting a small test secret in Secrets Manager encrypted with the key succeeds (proves AWS services can use the key on the role's behalf).
+- [ ] **AC4a** With the ABC Bank engineering role, creating and deleting (with no recovery window) a small test secret in Secrets Manager encrypted with the key succeeds (proves AWS services can use the key on the role's behalf).
 - [ ] **AC4b** With the ABC Bank administrator role, `aws kms get-key-policy` succeeds, and the policy simulator shows `kms:PutKeyPolicy` and `kms:ScheduleKeyDeletion` allowed.
-- [ ] **AC4c** Apart from the administrator role, the engineering role, `OrganizationAccountAccessRole` (the break-glass path from FND-1) and AWS service-linked roles, no IAM role in the ABC Bank account is allowed `kms:Decrypt` on the key (checked with `aws iam simulate-principal-policy` for each role).
+- [ ] **AC4c** Apart from the administrator role, the engineering role, `OrganizationAccountAccessRole` and AWS service-linked roles (the exceptions in requirement 3), no IAM role in the ABC Bank account is allowed `kms:Decrypt` on the key (checked with `aws iam simulate-principal-policy` for each role).
+- [ ] **AC4d** For the engineering role, the policy simulator shows `kms:CreateGrant` on the key allowed when `kms:GrantIsForAWSResource` is true and denied when it is false.
+- [ ] **AC4e** With the engineering role, creating a test log group named `/abc-bank/core-banking/test` in `us-east-1` encrypted with the key succeeds, and creating one named `/other/test` encrypted with the key fails; both are then deleted.
+- [ ] **AC4f** A test role created by the engineering role, with FND-1's permissions boundary and its own policy that allows `kms:Decrypt` on the key, is shown by the policy simulator as denied `kms:Decrypt` on the key (so the denial comes from the boundary). The test role is then deleted.
 - [ ] **AC5** The key policy has no statement that allows `"Principal": "*"` without an `aws:PrincipalAccount` (or equivalent) condition for the ABC Bank account.
-- [ ] **AC6** The key carries the four cost tags with non-empty values.
+- [ ] **AC6** The key carries the four cost tags with the values in `AGENTS.md`.
 - [ ] **AC7** A Terraform root that looks the key up by alias plans without errors.
 - [ ] **AC8** Running `terraform destroy` in a session root leaves the key `Enabled`.
 - [ ] **AC8a** The key's deletion window is set to 30 days in Terraform.
@@ -64,7 +69,7 @@ Roadmap standard: "Customer-managed KMS keys per account and per sensitive zone,
 
 ## Depends on
 
-- FND-1: the ABC Bank account and the administrator and engineering roles.
+- FND-1: the ABC Bank account, the administrator and engineering roles, and the permissions boundary.
 - FND-2: Terraform state storage.
 - FND-5: the organization CloudTrail trail, which records who used the key. FND-3 can be built first; the audit record exists once FND-5 is done.
 

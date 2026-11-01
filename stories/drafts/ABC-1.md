@@ -2,7 +2,7 @@
 
 **Repo:** `abc-bank` · **Milestone:** Phase 2: ABC Bank source · **Estimate:** 5 pts
 **Labels:** `story`, `needs-approval`, `infra`, `finops`, `abc-bank`, `dea-domain-2`
-**Approver:** Lakshmi100 · **Status:** draft round 3, not yet an issue
+**Approver:** Lakshmi100 · **Status:** draft round 4, not yet an issue
 
 ## User story
 
@@ -51,8 +51,8 @@ Every criterion runs against the real ABC Bank account, as `AGENTS.md` allows fo
 - [ ] **AC5** The database's storage, its Secrets Manager secret, and any CloudWatch log group it exports to use the ABC Bank customer-managed KMS key, not an AWS-managed key.
 - [ ] **AC6** Searching the repo, the Terraform state file, `terraform output`, and the saved plan output for the admin password finds nothing.
 - [ ] **AC7** Every resource the story creates has the four cost tags with the values in `AGENTS.md` (checked with the Resource Groups Tagging API).
-- [ ] **AC8** After `terraform destroy`, the Resource Groups Tagging API and `aws rds describe-db-snapshots` find no resource left from this story, and the FND-2, FND-3 and FND-4 resources are unchanged.
-- [ ] **AC9** While the session runs: `aws iam list-users` returns none, no EC2 key pair exists, and no NAT gateway or internet gateway exists in the ABC Bank account.
+- [ ] **AC8** After `terraform destroy`: the Resource Groups Tagging API finds no resource with this story's tags; `aws rds describe-db-snapshots` and `aws rds describe-db-instance-automated-backups` find nothing from this story; no CloudWatch log group RDS created for this database remains; the admin secret is deleted without a recovery window; and `terraform plan` in the FND-2, FND-3 and FND-4 roots shows no changes.
+- [ ] **AC9** While the session runs: `aws iam list-users` returns none; in `us-east-1`, no EC2 key pair exists and no NAT gateway or internet gateway exists in the ABC Bank account.
 - [ ] **AC10** The PR records the session's cost (from Cost Explorer by tag; if tag data isn't available yet, an estimate from the AWS pricing of each resource for the hours it ran) and it is under $1.
 - [ ] **AC11** `terraform fmt -check` and `terraform validate` pass.
 
@@ -67,7 +67,7 @@ Every criterion runs against the real ABC Bank account, as `AGENTS.md` allows fo
 
 ## Depends on
 
-- FND-1: the ABC Bank account, and the Identity Center engineering role with `rds-db:connect` and Cost Explorer read access.
+- FND-1: the ABC Bank account, and the Identity Center engineering role, which applies this root and runs every criterion: it includes `rds-db:connect`, the access path (Session Manager or EC2 Instance Connect Endpoint), Cost Explorer, Tagging API and read-only IAM.
 - FND-2: Terraform state storage for the ABC Bank account.
 - FND-3: the ABC Bank customer-managed KMS key (looked up by alias).
 - FND-4: the private network (VPC and private subnets, looked up by name or tag).
